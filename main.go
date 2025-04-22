@@ -10,25 +10,33 @@ import (
 	"time"
 )
 
-//azért var típusú, hogy mindenki elérje, és hogy a lifetime-ja a program végéig lefusson
+// azért var típusú, hogy mindenki elérje, és hogy a lifetime-ja a program végéig lefusson
 var (
 	timestampChan = make(chan time.Time, 1) // Pufferelt csatorna
 )
+
 //responsewriter: interface ami lehetővé teszi a http válasz írását
+//http.methodpost : egy http kérés metódusának ellenőrrzésére használható konstans, értéke a POST
+//az ilyen jellegű konstansok mindig azt adják vissza ami benne van a nevében
+
+// http.StatusMethodNotAllowed: egy kódot kapunk vissza (pl.405)
+// w pedig felelős a text/plain válaszért (responsewriter)
 func saveTimestamp(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
+	//r.body: kérés törzse, ami egy readcloser interface
+	//a readall beolvassa az r.body egészét, visszatérési értéke a []byte / error
 	body, err := io.ReadAll(r.Body)
+	defer r.Body.Close() //memória felszabadítás
 	if err != nil {
 		http.Error(w, "Error reading request body", http.StatusBadRequest)
 		return
 	}
 
-	unixTime, err := strconv.ParseInt(string(body), 10, 64)
-	if err != nil || unixTime < 0 { // Negatív érték ellenőrzése
+	unixTime, err := strconv.ParseInt(string(body), 10, 64) //strconv :  string és más alapvető adattípusok konverziójához használjuk
+	if err != nil || unixTime < 0 {                         // Negatív érték ellenőrzése
 		http.Error(w, "Invalid timestamp format", http.StatusBadRequest)
 		return
 	}
@@ -36,7 +44,7 @@ func saveTimestamp(w http.ResponseWriter, r *http.Request) {
 	timestamp := time.Unix(unixTime, 0)
 	select {
 	case timestampChan <- timestamp:
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusOK) //writeheader: egy http responst küld
 		w.Write([]byte("Timestamp saved"))
 	default:
 		http.Error(w, "Storage busy", http.StatusServiceUnavailable)
