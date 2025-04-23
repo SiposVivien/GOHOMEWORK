@@ -1,0 +1,25 @@
+A szolgáltatásnak két végponttal kell rendelkeznie:
+
+Egy, amely elmenti az időbélyeget. -SaveTimestamp-
+
+Egy másik, amely lekéri azt. -Getítimestamp-
+
+A szolgáltatás csak text/plain tartalomtípust fogadhat el, illetve adhat vissza (be- és kimenet egyaránt).
+
+A szolgáltatásnak kezelnie kell az adatversenyeket (amikor több kérés olvas vagy ír egyszerre az időbélyeghez), de nem használhatsz mutexet a szinkronizációhoz. Más megoldást kell találnod a párhuzamos műveletek kezelésére.
+
+A kliens oldalt ugyanabban a folyamatban kell megvalósítani, ahol a szolgáltatás fut:
+
+Először tárol egy időbélyeget.
+
+Majd visszaolvassa azt.
+
+A második lépésben visszakapott értéket írja ki a standard kimenetre.
+
+Az alkalmazás egyedüli kimenete (normál esetben) a visszaolvasott időbélyeg kell legyen.
+
+Az elkészült feladatnak két forrásfájlban kell szerepelnie:
+
+main.go
+
+main_test.go
